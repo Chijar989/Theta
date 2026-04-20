@@ -27,33 +27,18 @@ body {
     transform: perspective(900px) translateZ(50px) rotateX(2deg);
 }
 
-#screen {
-    width: 90%;
-    height: 90%;
-    padding: 20px;
-    white-space: pre-wrap;
-    overflow-y: auto;
-    position: relative;
-
-    /* CRT blur + glow */
-    filter: blur(0.6px);
-    text-shadow:
-        0 0 4px #33ff33,
-        1px 0 1px rgba(0,255,0,0.3);
-
-    /* FIX: prevent brightness flash on scroll */
-    will-change: transform;
-    backface-visibility: hidden;
-    transform: translateZ(0);
+/* --- FIX: Move CRT overlays to BODY so they don't scroll --- */
+body::before,
+body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
 }
 
 /* Scanlines */
-#screen::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-
+body::after {
     background: repeating-linear-gradient(
         to bottom,
         rgba(0,0,0,0) 0px,
@@ -61,26 +46,28 @@ body {
         rgba(0,255,0,0.04) 3px
     );
     mix-blend-mode: overlay;
-
-    /* FIX: stop re-blending during scroll */
-    will-change: opacity;
-    backface-visibility: hidden;
-    transform: translateZ(0);
 }
 
 /* Vignette */
-#screen::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-
+body::before {
     background: radial-gradient(circle, transparent 60%, rgba(0,0,0,0.6) 100%);
+}
 
-    /* FIX: same as above */
-    will-change: opacity;
-    backface-visibility: hidden;
-    transform: translateZ(0);
+#screen {
+    width: 90%;
+    height: 90%;
+    padding: 20px;
+    white-space: pre-wrap;
+    overflow-y: auto;
+    position: relative;
+}
+
+/* FIX: Apply blur to text only, not container */
+#screen * {
+    filter: blur(0.6px);
+    text-shadow:
+        0 0 4px #33ff33,
+        1px 0 1px rgba(0,255,0,0.3);
 }
 
 .cursor {
