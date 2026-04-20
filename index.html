@@ -1,3 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CRT Terminal</title>
+
+<style>
+@font-face {
+    font-family: "GlassTTY";
+    src: url("https://cdn.jsdelivr.net/gh/ayunami2000/glass-tty-font/Glass_TTY_VT220.ttf");
+}
+
+body {
+    background: #000;
+    margin: 0;
+    overflow: hidden;
+    font-family: "GlassTTY", monospace;
+    font-size: 14px;
+    color: #33ff33;
+    text-shadow: 0 0 4px #33ff33;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    transform: perspective(900px) translateZ(50px) rotateX(2deg);
+}
+
+#screen {
+    width: 90%;
+    height: 90%;
+    padding: 20px;
+    white-space: pre-wrap;
+    overflow-y: auto;
+    position: relative;
+    filter: blur(0.6px);
+    text-shadow:
+        0 0 4px #33ff33,
+        1px 0 1px rgba(0,255,0,0.3);
+}
+
+/* Scanlines */
+#screen::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+        to bottom,
+        rgba(0,0,0,0) 0px,
+        rgba(0,0,0,0) 2px,
+        rgba(0,255,0,0.04) 3px
+    );
+    mix-blend-mode: overlay;
+}
+
+/* Vignette */
+#screen::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(circle, transparent 60%, rgba(0,0,0,0.6) 100%);
+}
+
+.cursor {
+    display: inline-block;
+    width: 10px;
+    height: 16px;
+    background: #33ff33;
+    animation: blink 0.7s steps(1) infinite;
+}
+
+@keyframes blink {
+    50% { opacity: 0; }
+}
+</style>
+</head>
+
+<body>
+<div id="screen"></div>
+
 <script>
 const screen = document.getElementById("screen");
 let inputActive = false;
@@ -28,7 +109,6 @@ function newPrompt() {
     inputActive = true;
     currentInput = "";
 
-    // Create a fresh prompt line
     const line = document.createElement("div");
     line.innerHTML = `C:\\> <span class="input"></span><span class="cursor"></span>`;
     screen.appendChild(line);
@@ -76,13 +156,11 @@ document.addEventListener("keydown", e => {
     if (e.key === "Enter") {
         inputActive = false;
 
-        // Remove cursor from this line only
         const cursor = screen.querySelector(".cursor:last-of-type");
         if (cursor) cursor.remove();
 
         const output = runCommand(currentInput);
 
-        // Append output
         const out = document.createElement("div");
         out.textContent = output;
         screen.appendChild(out);
@@ -100,3 +178,6 @@ document.addEventListener("keydown", e => {
 
 bootSequence();
 </script>
+
+</body>
+</html>
