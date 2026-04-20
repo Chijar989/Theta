@@ -118,7 +118,12 @@ function newPrompt() {
 
 /* Process commands */
 function runCommand(cmd) {
-    const lower = cmd.toLowerCase();
+    const lower = cmd.toLowerCase().trim();
+
+    if (lower === "") {
+        // Empty command: just do nothing (new prompt already created)
+        return "";
+    }
 
     if (lower === "help") {
         return "Commands:\nhelp\ndir\nopen <filename>\nclear";
@@ -145,25 +150,33 @@ function runCommand(cmd) {
 document.addEventListener("keydown", e => {
     if (!inputActive) return;
 
-    const inputSpan = screen.querySelector(".input:last-of-type");
+    const inputs = screen.querySelectorAll(".input");
+    const cursors = screen.querySelectorAll(".cursor");
+    const inputSpan = inputs[inputs.length - 1];
+
+    if (!inputSpan) return;
 
     if (e.key === "Backspace") {
+        e.preventDefault();
         currentInput = currentInput.slice(0, -1);
         inputSpan.textContent = currentInput;
         return;
     }
 
     if (e.key === "Enter") {
+        e.preventDefault();
         inputActive = false;
 
-        const cursor = screen.querySelector(".cursor:last-of-type");
+        const cursor = cursors[cursors.length - 1];
         if (cursor) cursor.remove();
 
         const output = runCommand(currentInput);
 
-        const out = document.createElement("div");
-        out.textContent = output;
-        screen.appendChild(out);
+        if (output !== "") {
+            const out = document.createElement("div");
+            out.textContent = output;
+            screen.appendChild(out);
+        }
 
         screen.appendChild(document.createElement("br"));
         newPrompt();
@@ -174,6 +187,8 @@ document.addEventListener("keydown", e => {
         currentInput += e.key;
         inputSpan.textContent = currentInput;
     }
+
+    screen.scrollTop = screen.scrollHeight;
 });
 
 bootSequence();
