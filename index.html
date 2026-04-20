@@ -22,12 +22,10 @@ body {
     justify-content: center;
     align-items: center;
     height: 100vh;
-
-    /* CRT curvature */
     transform: perspective(900px) translateZ(50px) rotateX(2deg);
 }
 
-/* --- FIX: Move CRT overlays to BODY so they don't scroll --- */
+/* CRT overlays on BODY (no scroll brightness bug) */
 body::before,
 body::after {
     content: "";
@@ -37,7 +35,6 @@ body::after {
     z-index: 9999;
 }
 
-/* Scanlines */
 body::after {
     background: repeating-linear-gradient(
         to bottom,
@@ -48,7 +45,6 @@ body::after {
     mix-blend-mode: overlay;
 }
 
-/* Vignette */
 body::before {
     background: radial-gradient(circle, transparent 60%, rgba(0,0,0,0.6) 100%);
 }
@@ -62,8 +58,8 @@ body::before {
     position: relative;
 }
 
-/* FIX: Apply blur to text only, not container */
-#screen * {
+/* NEW: blur wrapper for ALL terminal text */
+#crt {
     filter: blur(0.6px);
     text-shadow:
         0 0 4px #33ff33,
@@ -85,10 +81,10 @@ body::before {
 </head>
 
 <body>
-<div id="screen"></div>
+<div id="screen"><div id="crt"></div></div>
 
 <script>
-const screen = document.getElementById("screen");
+const screen = document.getElementById("crt");
 let inputActive = false;
 let currentInput = "";
 
@@ -121,7 +117,7 @@ function newPrompt() {
     line.innerHTML = `C:\\> <span class="input"></span><span class="cursor"></span>`;
     screen.appendChild(line);
 
-    screen.scrollTop = screen.scrollHeight;
+    screen.parentElement.scrollTop = screen.parentElement.scrollHeight;
 }
 
 /* Process commands */
@@ -193,7 +189,7 @@ document.addEventListener("keydown", e => {
         inputSpan.textContent = currentInput;
     }
 
-    screen.scrollTop = screen.scrollHeight;
+    screen.parentElement.scrollTop = screen.parentElement.scrollHeight;
 });
 
 bootSequence();
