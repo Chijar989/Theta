@@ -1,33 +1,133 @@
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
-    <title>HTML5 Web Terminal</title>
-    <link href="https://fonts.googleapis.com/css?family=Inconsolata"
-          rel="stylesheet" type="text/css" />
-  </head>
-  <body>
-    <div id="container">
-      <output></output>
-      <div id="input-line" class="input-line">
-        <div class="prompt"></div><div><input class="cmdline" autofocus /></div>
-      </div>
-    </div>
-    
-    <!--<script src="http://www.codehelper.io/api/ips/?js"></script>-->
-    <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
-    <script src="https://s.codepen.io/AndrewBarfield/pen/LEbPJx.js"></script>
-    
-    <div class="clock-container">
-      <svg viewBox="0 0 100 100">
-        <circle cx="50" cy="50" r="45"/>
-        <g>
-          <rect class="hour" x="47.5" y="12.5" width="5" height="40" rx="2.5" ry="2.55" />
-          <rect class="min" x="48.5" y="12.5" width="3" height="40" rx="2" ry="2"/>
-          <line class="sec" x1="50" y1="50" x2="50" y2="16" />
-        </g>
-      </svg>
-    </div>
-    
-  </body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CRT Terminal</title>
+
+<style>
+    /* Import Glass TTY font */
+    @font-face {
+        font-family: "GlassTTY";
+        src: url("https://cdn.jsdelivr.net/gh/ayunami2000/glass-tty-font/Glass_TTY_VT220.ttf");
+    }
+
+    body {
+        background: #000;
+        margin: 0;
+        overflow: hidden;
+        font-family: "GlassTTY", monospace;
+        font-size: 14px; /* smaller text */
+        color: #33ff33;
+        text-shadow: 0 0 4px #33ff33;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+
+        /* CRT curvature */
+        transform: perspective(900px) translateZ(50px) rotateX(2deg);
+    }
+
+    #screen {
+        width: 90%;
+        height: 90%;
+        padding: 20px;
+        white-space: pre-wrap;
+        overflow: hidden;
+        position: relative;
+
+        /* Glow + blur */
+        filter: blur(0.6px);
+
+        /* Slight green chromatic aberration */
+        text-shadow:
+            0 0 4px #33ff33,
+            1px 0 1px rgba(0,255,0,0.3);
+    }
+
+    /* Scanlines */
+    #screen::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: repeating-linear-gradient(
+            to bottom,
+            rgba(0,0,0,0) 0px,
+            rgba(0,0,0,0) 2px,
+            rgba(0,255,0,0.04) 3px
+        );
+        mix-blend-mode: overlay;
+    }
+
+    /* Vignette */
+    #screen::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: radial-gradient(circle, transparent 60%, rgba(0,0,0,0.6) 100%);
+    }
+
+    /* Blinking block cursor */
+    .cursor {
+        display: inline-block;
+        width: 10px;
+        height: 16px;
+        background: #33ff33;
+        margin-left: 4px;
+        animation: blink 0.7s steps(1) infinite;
+    }
+
+    @keyframes blink {
+        50% { opacity: 0; }
+    }
+
+    /* CRT flicker */
+    @keyframes flicker {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.97; }
+        80% { opacity: 0.92; }
+    }
+</style>
+</head>
+
+<body>
+<div id="screen"></div>
+
+<script>
+const text = `
+Starting MS-DOS 6.22...
+------------------------------------
+
+C:\\> dir
+ Volume in drive C is SYSTEM
+ Directory of C:\\
+
+AUTOEXEC.BAT
+COMMAND.COM
+CONFIG.SYS
+GAMES
+LOGS
+
+C:\\> _`;
+
+let i = 0;
+const speed = 28;
+const screen = document.getElementById("screen");
+
+function type() {
+    if (i < text.length) {
+        screen.textContent += text.charAt(i);
+        i++;
+        setTimeout(type, speed);
+    } else {
+        screen.innerHTML += '<span class="cursor"></span>';
+    }
+}
+
+type();
+</script>
+
+</body>
 </html>
