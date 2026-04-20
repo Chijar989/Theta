@@ -1,96 +1,43 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>Retro Terminal</title>
+<title>Scrolling Terminal</title>
 <style>
     body {
-        background: #000;
-        color: #33ff33;
-        font-family: "Courier New", monospace;
-        font-size: 20px;
-        padding: 20px;
+        background: black;
+        color: #00ff99;
+        font-family: monospace;
+        font-size: 18px;
         overflow: hidden;
-        text-shadow: 0 0 5px #33ff33;
     }
-
-    /* Scanlines */
-    body::after {
-        content: "";
-        position: fixed;
-        top: 0;
-        left: 0;
+    #stream {
+        position: absolute;
         width: 100%;
         height: 100%;
-        pointer-events: none;
-        background: repeating-linear-gradient(
-            to bottom,
-            rgba(0, 0, 0, 0) 0px,
-            rgba(0, 0, 0, 0) 2px,
-            rgba(0, 255, 0, 0.05) 3px
-        );
-    }
-
-    /* Flicker animation */
-    @keyframes flicker {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.95; }
-        80% { opacity: 0.9; }
-    }
-    #screen {
-        animation: flicker 0.2s infinite;
-        white-space: pre-wrap;
-    }
-
-    /* Blinking cursor */
-    .cursor {
-        display: inline-block;
-        width: 10px;
-        background: #33ff33;
-        margin-left: 5px;
-        animation: blink 0.8s steps(1) infinite;
-    }
-    @keyframes blink {
-        50% { opacity: 0; }
+        white-space: pre;
     }
 </style>
 </head>
 <body>
-<div id="screen"></div>
+<div id="stream"></div>
 
 <script>
-const text = `
-Initializing MS-DOS v6.22...
-----------------------------------
+const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#$%&*";
+const stream = document.getElementById("stream");
 
-C:\\> dir
- Volume in drive C is SYSTEM
- Directory of C:\\
-
-AUTOEXEC.BAT
-COMMAND.COM
-CONFIG.SYS
-SYSTEM32
-GAMES
-LOGS
-
-C:\\> _`;
-
-let i = 0;
-const speed = 35;
-const screen = document.getElementById("screen");
-
-function type() {
-    if (i < text.length) {
-        screen.textContent += text.charAt(i);
-        i++;
-        setTimeout(type, speed);
-    } else {
-        screen.innerHTML += '<span class="cursor"></span>';
-    }
+function randomLine() {
+    let line = "";
+    for (let i = 0; i < 80; i++)
+        line += chars[Math.floor(Math.random() * chars.length)];
+    return line;
 }
 
-type();
+setInterval(() => {
+    stream.textContent += randomLine() + "\n";
+    if (stream.textContent.split("\n").length > 40)
+        stream.textContent = stream.textContent.split("\n").slice(1).join("\n");
+}, 50);
 </script>
 </body>
 </html>
