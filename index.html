@@ -5,90 +5,74 @@
 <title>CRT Terminal</title>
 
 <style>
-    /* Import Glass TTY font */
-    @font-face {
-        font-family: "GlassTTY";
-        src: url("https://cdn.jsdelivr.net/gh/ayunami2000/glass-tty-font/Glass_TTY_VT220.ttf");
-    }
+@font-face {
+    font-family: "GlassTTY";
+    src: url("https://cdn.jsdelivr.net/gh/ayunami2000/glass-tty-font/Glass_TTY_VT220.ttf");
+}
 
-    body {
-        background: #000;
-        margin: 0;
-        overflow: hidden;
-        font-family: "GlassTTY", monospace;
-        font-size: 14px; /* smaller text */
-        color: #33ff33;
-        text-shadow: 0 0 4px #33ff33;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
+body {
+    background: #000;
+    margin: 0;
+    overflow: hidden;
+    font-family: "GlassTTY", monospace;
+    font-size: 14px;
+    color: #33ff33;
+    text-shadow: 0 0 4px #33ff33;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    transform: perspective(900px) translateZ(50px) rotateX(2deg);
+}
 
-        /* CRT curvature */
-        transform: perspective(900px) translateZ(50px) rotateX(2deg);
-    }
+#screen {
+    width: 90%;
+    height: 90%;
+    padding: 20px;
+    white-space: pre-wrap;
+    overflow-y: auto;
+    position: relative;
+    filter: blur(0.6px);
+    text-shadow:
+        0 0 4px #33ff33,
+        1px 0 1px rgba(0,255,0,0.3);
+}
 
-    #screen {
-        width: 90%;
-        height: 90%;
-        padding: 20px;
-        white-space: pre-wrap;
-        overflow: hidden;
-        position: relative;
+/* Scanlines */
+#screen::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+        to bottom,
+        rgba(0,0,0,0) 0px,
+        rgba(0,0,0,0) 2px,
+        rgba(0,255,0,0.04) 3px
+    );
+    mix-blend-mode: overlay;
+}
 
-        /* Glow + blur */
-        filter: blur(0.6px);
+/* Vignette */
+#screen::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(circle, transparent 60%, rgba(0,0,0,0.6) 100%);
+}
 
-        /* Slight green chromatic aberration */
-        text-shadow:
-            0 0 4px #33ff33,
-            1px 0 1px rgba(0,255,0,0.3);
-    }
+.cursor {
+    display: inline-block;
+    width: 10px;
+    height: 16px;
+    background: #33ff33;
+    animation: blink 0.7s steps(1) infinite;
+}
 
-    /* Scanlines */
-    #screen::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
-        background: repeating-linear-gradient(
-            to bottom,
-            rgba(0,0,0,0) 0px,
-            rgba(0,0,0,0) 2px,
-            rgba(0,255,0,0.04) 3px
-        );
-        mix-blend-mode: overlay;
-    }
-
-    /* Vignette */
-    #screen::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
-        background: radial-gradient(circle, transparent 60%, rgba(0,0,0,0.6) 100%);
-    }
-
-    /* Blinking block cursor */
-    .cursor {
-        display: inline-block;
-        width: 10px;
-        height: 16px;
-        background: #33ff33;
-        margin-left: 4px;
-        animation: blink 0.7s steps(1) infinite;
-    }
-
-    @keyframes blink {
-        50% { opacity: 0; }
-    }
-
-    /* CRT flicker */
-    @keyframes flicker {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.97; }
-        80% { opacity: 0.92; }
-    }
+@keyframes blink {
+    50% { opacity: 0; }
+}
 </style>
 </head>
 
@@ -96,37 +80,91 @@
 <div id="screen"></div>
 
 <script>
-const text = `
-Starting MS-DOS 6.22...
-------------------------------------
-
-C:\\> dir
- Volume in drive C is SYSTEM
- Directory of C:\\
-
-AUTOEXEC.BAT
-COMMAND.COM
-CONFIG.SYS
-GAMES
-LOGS
-
-C:\\> _`;
-
-let i = 0;
-const speed = 28;
 const screen = document.getElementById("screen");
+let inputActive = false;
+let currentInput = "";
 
-function type() {
-    if (i < text.length) {
-        screen.textContent += text.charAt(i);
-        i++;
-        setTimeout(type, speed);
-    } else {
-        screen.innerHTML += '<span class="cursor"></span>';
+/* Fake textfiles */
+const files = {
+    test1: "This is Test1.\nA clue lies within.",
+    test2: "This is Test2.\nAnother piece of the puzzle.",
+    test3: "This is Test3.\nYou're getting closer."
+};
+
+/* Loading animation */
+async function bootSequence() {
+    screen.textContent = "Booting System...\n\n[";
+    let bar = "";
+    for (let i = 0; i < 30; i++) {
+        bar += "#";
+        screen.textContent = "Booting System...\n\n[" + bar.padEnd(30, " ") + "]";
+        await new Promise(r => setTimeout(r, 80));
     }
+    screen.textContent += "\n\nSystem Ready.\nType 'help' for commands.\n\n";
+    newPrompt();
 }
 
-type();
+/* Show prompt */
+function newPrompt() {
+    inputActive = true;
+    currentInput = "";
+    screen.innerHTML += "C:\\> <span id='input'></span><span class='cursor'></span>";
+    screen.scrollTop = screen.scrollHeight;
+}
+
+/* Process commands */
+function runCommand(cmd) {
+    const lower = cmd.toLowerCase();
+
+    if (lower === "help") {
+        return "Commands:\nhelp\ndir\nopen <filename>\nclear";
+    }
+
+    if (lower === "dir") {
+        return "Files:\n" + Object.keys(files).map(f => f.toUpperCase()).join("\n");
+    }
+
+    if (lower.startsWith("open ")) {
+        const name = lower.split(" ")[1];
+        return files[name] || "File not found.";
+    }
+
+    if (lower === "clear") {
+        screen.textContent = "";
+        return "";
+    }
+
+    return "Unknown command.";
+}
+
+/* Keyboard input */
+document.addEventListener("keydown", e => {
+    if (!inputActive) return;
+
+    const inputSpan = document.getElementById("input");
+
+    if (e.key === "Backspace") {
+        currentInput = currentInput.slice(0, -1);
+        inputSpan.textContent = currentInput;
+        return;
+    }
+
+    if (e.key === "Enter") {
+        inputActive = false;
+        screen.innerHTML = screen.innerHTML.replace('<span class="cursor"></span>', "");
+        const output = runCommand(currentInput);
+        screen.innerHTML += "\n" + output + "\n\n";
+        newPrompt();
+        return;
+    }
+
+    if (e.key.length === 1) {
+        currentInput += e.key;
+        inputSpan.textContent = currentInput;
+    }
+});
+
+bootSequence();
 </script>
 
 </body>
