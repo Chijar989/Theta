@@ -22,6 +22,8 @@ body {
     justify-content: center;
     align-items: center;
     height: 100vh;
+
+    /* CRT curvature */
     transform: perspective(900px) translateZ(50px) rotateX(2deg);
 }
 
@@ -32,10 +34,17 @@ body {
     white-space: pre-wrap;
     overflow-y: auto;
     position: relative;
+
+    /* CRT blur + glow */
     filter: blur(0.6px);
     text-shadow:
         0 0 4px #33ff33,
         1px 0 1px rgba(0,255,0,0.3);
+
+    /* FIX: prevent brightness flash on scroll */
+    will-change: transform;
+    backface-visibility: hidden;
+    transform: translateZ(0);
 }
 
 /* Scanlines */
@@ -44,6 +53,7 @@ body {
     position: absolute;
     inset: 0;
     pointer-events: none;
+
     background: repeating-linear-gradient(
         to bottom,
         rgba(0,0,0,0) 0px,
@@ -51,6 +61,11 @@ body {
         rgba(0,255,0,0.04) 3px
     );
     mix-blend-mode: overlay;
+
+    /* FIX: stop re-blending during scroll */
+    will-change: opacity;
+    backface-visibility: hidden;
+    transform: translateZ(0);
 }
 
 /* Vignette */
@@ -59,7 +74,13 @@ body {
     position: absolute;
     inset: 0;
     pointer-events: none;
+
     background: radial-gradient(circle, transparent 60%, rgba(0,0,0,0.6) 100%);
+
+    /* FIX: same as above */
+    will-change: opacity;
+    backface-visibility: hidden;
+    transform: translateZ(0);
 }
 
 .cursor {
@@ -120,10 +141,7 @@ function newPrompt() {
 function runCommand(cmd) {
     const lower = cmd.toLowerCase().trim();
 
-    if (lower === "") {
-        // Empty command: just do nothing (new prompt already created)
-        return "";
-    }
+    if (lower === "") return "";
 
     if (lower === "help") {
         return "Commands:\nhelp\ndir\nopen <filename>\nclear";
