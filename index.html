@@ -25,14 +25,14 @@ body {
     transform: perspective(900px) translateZ(50px) rotateX(2deg);
 }
 
-/* CRT overlays on BODY (no scroll brightness bug) */
+/* CRT overlays */
 body::before,
 body::after {
     content: "";
     position: fixed;
     inset: 0;
     pointer-events: none;
-    z-index: 9999;
+    z-index: 9998;
 }
 
 body::after {
@@ -49,6 +49,39 @@ body::before {
     background: radial-gradient(circle, transparent 60%, rgba(0,0,0,0.6) 100%);
 }
 
+/* VHS glitch overlay */
+#vhs-glitch {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    mix-blend-mode: screen;
+    opacity: 0;
+}
+
+/* Horizontal jitter lines */
+.vhs-line {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: rgba(0,255,0,0.2);
+    filter: blur(1px);
+    opacity: 0;
+}
+
+/* RGB split flash */
+.rgb-split {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9997;
+    mix-blend-mode: lighten;
+    opacity: 0;
+    backdrop-filter: blur(0.4px);
+}
+
+/* Terminal container */
 #screen {
     width: 90%;
     height: 90%;
@@ -58,7 +91,7 @@ body::before {
     position: relative;
 }
 
-/* NEW: blur wrapper for ALL terminal text */
+/* Blur wrapper */
 #crt {
     filter: blur(0.6px);
     text-shadow:
@@ -77,11 +110,30 @@ body::before {
 @keyframes blink {
     50% { opacity: 0; }
 }
+
+/* VHS keyframes */
+@keyframes vhsFlash {
+    0% { opacity: 0; transform: translateX(0); }
+    10% { opacity: 0.4; transform: translateX(-3px); }
+    20% { opacity: 0.2; transform: translateX(3px); }
+    30% { opacity: 0; transform: translateX(0); }
+}
+
+@keyframes vhsLine {
+    0% { opacity: 0; transform: translateX(0); }
+    50% { opacity: 0.4; transform: translateX(-10px); }
+    100% { opacity: 0; transform: translateX(0); }
+}
 </style>
 </head>
 
 <body>
+
 <div id="screen"><div id="crt"></div></div>
+
+<!-- VHS glitch layers -->
+<div id="vhs-glitch"></div>
+<div class="rgb-split" id="rgb"></div>
 
 <script>
 const screen = document.getElementById("crt");
@@ -95,7 +147,38 @@ const files = {
     test3: "This is Test3.\nYou're getting closer."
 };
 
-/* Loading animation */
+/* VHS GLITCH SYSTEM */
+function triggerVHS() {
+    const glitch = document.getElementById("vhs-glitch");
+    const rgb = document.getElementById("rgb");
+
+    // Random horizontal lines
+    glitch.innerHTML = "";
+    const count = Math.floor(Math.random() * 4) + 1;
+    for (let i = 0; i < count; i++) {
+        const line = document.createElement("div");
+        line.className = "vhs-line";
+        line.style.top = Math.random() * 100 + "%";
+        line.style.animation = `vhsLine 0.2s ease-out`;
+        glitch.appendChild(line);
+    }
+
+    // RGB split flash
+    rgb.style.animation = "vhsFlash 0.25s ease-out";
+
+    // Reset after animation
+    setTimeout(() => {
+        rgb.style.animation = "";
+        glitch.innerHTML = "";
+    }, 300);
+}
+
+// Trigger glitch randomly every 2–6 seconds
+setInterval(() => {
+    if (Math.random() < 0.5) triggerVHS();
+}, 2000);
+
+/* Boot animation */
 async function bootSequence() {
     screen.textContent = "Booting System...\n\n[";
     let bar = "";
@@ -108,7 +191,7 @@ async function bootSequence() {
     newPrompt();
 }
 
-/* Show prompt */
+/* Prompt */
 function newPrompt() {
     inputActive = true;
     currentInput = "";
@@ -120,7 +203,7 @@ function newPrompt() {
     screen.parentElement.scrollTop = screen.parentElement.scrollHeight;
 }
 
-/* Process commands */
+/* Commands */
 function runCommand(cmd) {
     const lower = cmd.toLowerCase().trim();
 
@@ -147,7 +230,7 @@ function runCommand(cmd) {
     return "Unknown command.";
 }
 
-/* Keyboard input */
+/* Input handler */
 document.addEventListener("keydown", e => {
     if (!inputActive) return;
 
